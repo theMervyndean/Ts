@@ -1,8 +1,7 @@
 // ============================================================================
 // TS LOGISTICS — CONFIGURABLE AUTOMATION WEBHOOK
-// Replace the placeholder below with your n8n, Make, Zapier, or API endpoint.
 // ============================================================================
-export const WEBHOOK_URL = "PASTE_WEBHOOK_URL_HERE";
+export const WEBHOOK_URL = "https://hook.us2.make.com/n4xjbwi4or9amfr3l2xeccvfcsvxlly7";
 
 export type FormType =
   | "quote_request"
@@ -34,6 +33,7 @@ export interface WebhookResponse {
   currentHub?: string;
   estimatedDelivery?: string;
   updatedAt?: string;
+  rawText?: string;
   [key: string]: unknown;
 }
 
@@ -60,7 +60,7 @@ export function isWebhookConfigured(): boolean {
 
 /**
  * Sends any TS Logistics website form or lookup payload via POST JSON
- * to WEBHOOK_URL. Runs in Test Mode when WEBHOOK_URL is still the placeholder.
+ * to WEBHOOK_URL. Runs in Test Mode only when WEBHOOK_URL is the placeholder.
  */
 export async function sendToWebhook<T extends Record<string, unknown>>(
   formType: FormType,
@@ -81,7 +81,6 @@ export async function sendToWebhook<T extends Record<string, unknown>>(
 
   if (!isWebhookConfigured()) {
     console.log(`[TS Logistics Test Mode] ${formType} payload:`, payload);
-    // Simulate realistic brief network latency so loading states are observable
     await new Promise((resolve) => setTimeout(resolve, 650));
     return {
       ok: true,
@@ -99,31 +98,34 @@ export async function sendToWebhook<T extends Record<string, unknown>>(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Accept: "application/json",
+        Accept: "application/json, text/plain, */*",
       },
       body: JSON.stringify(payload),
       signal: controller.signal,
     });
 
+    console.log(`[TS Logistics Webhook] (${formType}) HTTP ${response.status}`);
+
+    const rawText = await response.text().catch(() => "");
+
     if (!response.ok) {
-      const errorText = await response.text().catch(() => "");
       throw new Error(
-        `Server responded with HTTP ${response.status}${errorText ? `: ${errorText}` : ""}`
+        `Server responded with HTTP ${response.status}${rawText ? `: ${rawText}` : ""}`
       );
     }
 
-    const contentType = response.headers.get("content-type") || "";
     let parsed: WebhookResponse = {};
-    if (contentType.includes("application/json")) {
-      parsed = (await response.json()) as WebhookResponse;
-    } else {
-      const rawText = await response.text();
-      if (rawText) {
-        try {
-          parsed = JSON.parse(rawText) as WebhookResponse;
-        } catch {
-          parsed = { message: rawText };
+    if (rawText.trim()) {
+      try {
+        const json = JSON.parse(rawText) as unknown;
+        if (json && typeof json === "object" && !Array.isArray(json)) {
+          parsed = json as WebhookResponse;
+        } else {
+          parsed = { rawText };
         }
+      } catch {
+        // Plain-text 2xx replies (such as "Accepted") are valid successes.
+        parsed = { rawText };
       }
     }
 
@@ -131,7 +133,7 @@ export async function sendToWebhook<T extends Record<string, unknown>>(
       ok: true,
       ...parsed,
       testMode: false,
-      referenceId: typeof parsed.referenceId === "string" && parsed.referenceId ? parsed.referenceId : referenceId,
+      referenceId,
     };
   } catch (err) {
     const errorMessage =

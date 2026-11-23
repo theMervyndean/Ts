@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { AlertCircle, Check, CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
-import { SERVICE_TYPE_OPTIONS } from "../data/logisticsData";
+import { AlertCircle, Check, CheckCircle2, Loader2, MessageCircle, ShieldCheck } from "lucide-react";
+import {
+  getWhatsAppUrl,
+  SERVICE_TYPE_OPTIONS,
+} from "../data/logisticsData";
 import { BUTTON_PRIMARY_CLASSES, Reveal, useRippleFeedback } from "../lib/animations";
 import {
   getTodayWATDateString,
@@ -247,9 +250,22 @@ export const QuoteSection: React.FC<QuoteSectionProps> = ({ preselectedService }
                     className="p-4 rounded-lg bg-red-50 border border-red-200 text-red-900 flex items-start gap-3"
                   >
                     <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
-                    <div className="text-sm">
+                    <div className="text-sm space-y-1.5">
                       <p className="font-semibold">Unable to submit quote request</p>
-                      <p className="mt-0.5 text-red-800">{submitError}</p>
+                      <p className="text-red-800">{submitError}</p>
+                      <p className="text-red-900">
+                        You can also reach dispatch directly on{" "}
+                        <a
+                          href={getWhatsAppUrl("Hello TS Logistics, I need a delivery quote")}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 font-semibold underline underline-offset-2 hover:text-orange-700"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5 shrink-0" />
+                          <span>WhatsApp</span>
+                        </a>
+                        .
+                      </p>
                     </div>
                   </div>
                 )}

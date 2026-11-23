@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, MessageCircle, X } from "lucide-react";
+import { getWhatsAppUrl } from "../data/logisticsData";
 import { BUTTON_PRIMARY_CLASSES, useRippleFeedback, useScrollMetrics } from "../lib/animations";
 
 const NAV_LINKS = [
@@ -76,8 +77,19 @@ export const Navbar: React.FC = () => {
             })}
           </nav>
 
-          {/* Zone 3: Single Primary Action + Mobile/Tablet Menu Trigger (< 1024px) */}
-          <div className="flex items-center gap-3 shrink-0">
+          {/* Zone 3: Single Primary Action + WhatsApp & Mobile Menu Trigger (< 1024px) */}
+          <div className="flex items-center gap-2.5 shrink-0">
+            <a
+              href={getWhatsAppUrl("Hello TS Logistics, I need a delivery quote")}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Chat on WhatsApp"
+              title="Chat on WhatsApp"
+              className="hidden sm:inline-flex items-center justify-center w-10 h-10 rounded-lg text-slate-200 hover:text-white bg-white/5 hover:bg-[#128C7E] border border-white/10 transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
+            >
+              <MessageCircle className="w-4 h-4" />
+            </a>
+
             <a
               href="#quote"
               onClick={triggerRipple}
@@ -134,7 +146,7 @@ export const Navbar: React.FC = () => {
                   </a>
                 );
               })}
-              <div className="pt-2">
+              <div className="pt-2 space-y-2">
                 <a
                   href="#quote"
                   tabIndex={mobileOpen ? 0 : -1}
@@ -142,6 +154,17 @@ export const Navbar: React.FC = () => {
                   className={`${BUTTON_PRIMARY_CLASSES} w-full min-h-[46px] px-4 py-3 text-base rounded-lg focus-visible:ring-offset-navy-900`}
                 >
                   Get a Quote
+                </a>
+                <a
+                  href={getWhatsAppUrl("Hello TS Logistics, I need a delivery quote")}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  tabIndex={mobileOpen ? 0 : -1}
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center justify-center gap-2 w-full min-h-[46px] px-4 py-3 text-sm font-semibold text-white bg-[#128C7E] hover:bg-[#0e7367] rounded-lg transition-colors"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  <span>Chat on WhatsApp</span>
                 </a>
               </div>
             </div>

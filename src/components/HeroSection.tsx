@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "motion/react";
-import { ArrowRight, MapPin } from "lucide-react";
-import { IMAGES } from "../data/logisticsData";
+import { ArrowRight, MapPin, MessageCircle } from "lucide-react";
+import { getWhatsAppUrl, IMAGES } from "../data/logisticsData";
 import {
   BUTTON_PRIMARY_CLASSES,
   BUTTON_SECONDARY_CLASSES,
@@ -124,6 +124,23 @@ export const HeroSection: React.FC = () => {
             >
               <MapPin className="w-4 h-4 text-orange-400" />
               <span>Track Shipment</span>
+            </a>
+          </motion.div>
+
+          <motion.div
+            initial={reducedMotion ? false : { opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, delay: 0.28, ease: [0.16, 1, 0.3, 1] }}
+            className="mt-5"
+          >
+            <a
+              href={getWhatsAppUrl("Hello TS Logistics, I need a delivery quote")}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 min-h-[44px] text-sm font-medium text-slate-300 hover:text-white underline-offset-4 hover:underline decoration-orange-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 rounded-sm"
+            >
+              <MessageCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>Need urgent dispatch? Chat on WhatsApp</span>
             </a>
           </motion.div>
         </div>

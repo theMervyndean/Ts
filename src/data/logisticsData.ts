@@ -258,6 +258,11 @@ export const FAQ_ITEMS = [
   },
 ] as const;
 
-export const WHATSAPP_NUMBER = "2348008756447";
-export const SUPPORT_PHONE_DISPLAY = "+234 800 875 6447";
+export const WHATSAPP_NUMBER = "2349021445607";
 export const SUPPORT_EMAIL = "dispatch@tslogistics.ng";
+
+export function getWhatsAppUrl(
+  message = "Hello TS Logistics, I need a delivery quote"
+): string {
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+}

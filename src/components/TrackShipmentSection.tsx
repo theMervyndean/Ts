@@ -88,7 +88,10 @@ export const TrackShipmentSection: React.FC = () => {
     try {
       const response = await sendToWebhook("tracking_lookup", { trackingId: cleaned });
 
-      if (response.testMode || !isWebhookConfigured()) {
+      const hasValidStatus =
+        typeof response.status === "string" && response.status.trim().length > 0;
+
+      if (response.testMode || !isWebhookConfigured() || !hasValidStatus) {
         const fallback = buildFallbackRecord(cleaned);
         setResult(fallback);
         setLookupMeta({

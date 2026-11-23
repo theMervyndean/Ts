@@ -1,11 +1,9 @@
 import React from "react";
-import { Instagram, Linkedin, Mail, MapPin, MessageCircle, Phone, Twitter } from "lucide-react";
-import { SUPPORT_EMAIL, SUPPORT_PHONE_DISPLAY, WHATSAPP_NUMBER } from "../data/logisticsData";
+import { Instagram, Linkedin, Mail, MapPin, MessageCircle, Twitter } from "lucide-react";
+import { getWhatsAppUrl, SUPPORT_EMAIL } from "../data/logisticsData";
 
 export const Footer: React.FC = () => {
-  const whatsappHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-    "Hello TS Logistics, I would like to make an inquiry."
-  )}`;
+  const whatsappHref = getWhatsAppUrl("Hello TS Logistics, I need a delivery quote");
 
   return (
     <footer className="bg-navy-950 text-slate-300 border-t border-white/10">
@@ -26,10 +24,6 @@ export const Footer: React.FC = () => {
               <p className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-orange-400 shrink-0" />
                 <span>Plot 14, Oba Akran Avenue, Ikeja, Lagos, Nigeria</span>
-              </p>
-              <p className="flex items-center gap-2">
-                <Phone className="w-4 h-4 text-orange-400 shrink-0" />
-                <span className="font-mono">{SUPPORT_PHONE_DISPLAY}</span>
               </p>
               <p className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-orange-400 shrink-0" />

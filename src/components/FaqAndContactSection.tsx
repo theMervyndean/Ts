@@ -2,9 +2,8 @@ import React, { useState } from "react";
 import { ChevronDown, Loader2, MessageCircle, Send } from "lucide-react";
 import {
   FAQ_ITEMS,
+  getWhatsAppUrl,
   SUPPORT_EMAIL,
-  SUPPORT_PHONE_DISPLAY,
-  WHATSAPP_NUMBER,
 } from "../data/logisticsData";
 import { BUTTON_PRIMARY_CLASSES, Reveal, useRippleFeedback } from "../lib/animations";
 import { isWebhookConfigured, sendToWebhook } from "../lib/webhook";
@@ -29,7 +28,7 @@ function getFriendlyFallbackReply(question: string): string {
   if (lower.includes("port") || lower.includes("clear") || lower.includes("custom") || lower.includes("apapa")) {
     return "Our Apapa, Tin Can, and MMIA customs desk handles Form M, PAAR, and SONCAP clearance within 48–72 hours. Share your Bill of Lading details in the Quote form or message us on WhatsApp.";
   }
-  return "Thanks for reaching out to TS Logistics Support. A Lagos dispatch coordinator has logged your message and can assist immediately via WhatsApp or at " + SUPPORT_PHONE_DISPLAY + ".";
+  return "Thanks for reaching out to TS Logistics Support. A Lagos dispatch coordinator has logged your message and can assist immediately via WhatsApp.";
 }
 
 export const FaqAndContactSection: React.FC = () => {
@@ -83,11 +82,7 @@ export const FaqAndContactSection: React.FC = () => {
       const serverReply =
         typeof response.reply === "string" && response.reply.trim()
           ? response.reply.trim()
-          : typeof response.message === "string" &&
-              response.message.trim() &&
-              !response.testMode
-            ? response.message.trim()
-            : null;
+          : null;
 
       const replyText =
         !response.testMode && isWebhookConfigured() && serverReply
@@ -119,9 +114,7 @@ export const FaqAndContactSection: React.FC = () => {
     }
   };
 
-  const whatsappHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-    "Hello TS Logistics, I would like assistance with a shipment."
-  )}`;
+  const whatsappHref = getWhatsAppUrl("Hello TS Logistics, I have a question");
 
   return (
     <>
@@ -217,12 +210,6 @@ export const FaqAndContactSection: React.FC = () => {
                   </span>
                 </div>
                 <div className="pt-2 border-t border-slate-200 flex flex-wrap gap-x-6 gap-y-2">
-                  <div>
-                    <span className="text-xs text-slate-500 block">Dispatch Line</span>
-                    <span className="font-mono font-semibold text-navy-900">
-                      {SUPPORT_PHONE_DISPLAY}
-                    </span>
-                  </div>
                   <div>
                     <span className="text-xs text-slate-500 block">Email</span>
                     <span className="font-mono font-semibold text-navy-900">{SUPPORT_EMAIL}</span>
