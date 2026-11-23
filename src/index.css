@@ -1,0 +1,145 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  --font-sans: "Public Sans", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --color-navy-950: #060e1a;
+  --color-navy-900: #0a1628;
+  --color-navy-800: #112240;
+  --color-navy-700: #1b3258;
+  --color-orange-500: #f97316;
+  --color-orange-600: #ea580c;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 76px;
+    overflow-x: clip;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    color: #0f172a;
+    background-color: #f8fafc;
+    overflow-x: clip;
+    -webkit-tap-highlight-color: rgba(249, 115, 22, 0.22);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+  }
+
+  button,
+  a,
+  select,
+  summary,
+  [role="button"],
+  input[type="date"],
+  input[type="time"],
+  input[type="checkbox"],
+  input[type="radio"] {
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="number"],
+  textarea {
+    cursor: text;
+    touch-action: manipulation;
+  }
+
+  button:disabled,
+  input:disabled,
+  select:disabled,
+  textarea:disabled {
+    cursor: not-allowed;
+  }
+}
+
+@keyframes shakeError {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-5px);
+  }
+  40% {
+    transform: translateX(5px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(3px);
+  }
+}
+
+@keyframes successPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes heroGlowDrift {
+  0%, 100% {
+    opacity: 0.42;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    opacity: 0.62;
+    transform: translate3d(2%, -2%, 0) scale(1.04);
+  }
+}
+
+@keyframes rippleExpand {
+  0% {
+    opacity: 0.45;
+    transform: scale(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}
+
+.animate-shake {
+  animation: shakeError 360ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+.animate-success-pop {
+  animation: successPop 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-hero-glow {
+  animation: heroGlowDrift 14s ease-in-out infinite;
+}
+
+.animate-ripple {
+  animation: rippleExpand 520ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "TS Logistics",
+  "description": "Fast, reliable same-day delivery, interstate haulage, warehousing, port clearing, and last-mile fulfillment across Nigeria and beyond.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
