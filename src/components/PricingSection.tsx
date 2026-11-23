@@ -10,6 +10,7 @@ import {
 import { isValidEmail } from "../lib/validation";
 import { sendToWebhook } from "../lib/webhook";
 import { HoneypotField } from "./HoneypotField";
+import { OrangeSelect } from "./OrangeSelect";
 
 export const PricingSection: React.FC = () => {
   const { currency, setCurrency, detectedCurrency, rates, isLiveRate } = useAutoCurrency();
@@ -89,7 +90,7 @@ export const PricingSection: React.FC = () => {
       className="scroll-mt-20 py-14 sm:py-16 lg:py-24 bg-slate-50 border-b border-slate-200"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Reveal>
+        <Reveal className="relative z-20">
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10 sm:mb-12">
             <div className="max-w-2xl">
               <p className="text-sm font-semibold text-orange-600 mb-2">Transparent Global Pricing</p>
@@ -104,7 +105,7 @@ export const PricingSection: React.FC = () => {
               </p>
             </div>
 
-            <div className="shrink-0 space-y-1.5">
+            <div className="shrink-0 space-y-1.5 w-full sm:w-auto sm:min-w-[260px]">
               <label
                 htmlFor="currency-selector"
                 className="flex items-center gap-1.5 text-xs font-semibold text-slate-600"
@@ -115,18 +116,17 @@ export const PricingSection: React.FC = () => {
                   {currency === detectedCurrency ? " (Auto-detected)" : ""}
                 </span>
               </label>
-              <select
+              <OrangeSelect
                 id="currency-selector"
                 value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
-                className="h-11 min-h-[44px] px-3.5 bg-white border border-slate-300 rounded-lg text-sm font-medium text-navy-900 transition-[border-color,box-shadow] duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500"
-              >
-                {SUPPORTED_CURRENCIES.map((opt) => (
-                  <option key={opt.code} value={opt.code}>
-                    {opt.code} — {opt.label}
-                  </option>
-                ))}
-              </select>
+                onChange={setCurrency}
+                ariaLabel="Display Currency"
+                buttonClassName="font-medium text-navy-900"
+                options={SUPPORTED_CURRENCIES.map((opt) => ({
+                  value: opt.code,
+                  label: `${opt.code} — ${opt.label}`,
+                }))}
+              />
               {currency !== "NGN" && (
                 <p className="text-[11px] text-slate-500">
                   {isLiveRate ? "Live exchange estimate" : "Estimated conversion"} · Base tariff in NGN
@@ -308,18 +308,17 @@ export const PricingSection: React.FC = () => {
                   <label htmlFor="plan-select" className="block text-xs font-semibold text-slate-700 mb-1">
                     Selected Plan
                   </label>
-                  <select
+                  <OrangeSelect
                     id="plan-select"
                     value={selectedPlan}
-                    onChange={(e) => setSelectedPlan(e.target.value as PricingTier["name"])}
-                    className="w-full h-11 min-h-[44px] px-3.5 bg-slate-50 border border-slate-300 rounded-lg text-sm font-semibold text-navy-900 transition-[border-color,box-shadow] duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500"
-                  >
-                    {PRICING_TIERS.map((tier) => (
-                      <option key={tier.id} value={tier.name}>
-                        {tier.name} ({formatConvertedFromNaira(tier.priceNgn, currency, rates)} / month)
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(val) => setSelectedPlan(val as PricingTier["name"])}
+                    ariaLabel="Selected Plan"
+                    buttonClassName="bg-slate-50 font-semibold text-navy-900"
+                    options={PRICING_TIERS.map((tier) => ({
+                      value: tier.name,
+                      label: `${tier.name} (${formatConvertedFromNaira(tier.priceNgn, currency, rates)} / month)`,
+                    }))}
+                  />
                 </div>
 
                 <div key={errors.name ? `pn-${shakeCount}` : "pn"} className={errors.name ? "animate-shake" : ""}>

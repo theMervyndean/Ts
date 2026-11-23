@@ -14,6 +14,7 @@ import {
 } from "../lib/validation";
 import { sendToWebhook } from "../lib/webhook";
 import { HoneypotField } from "./HoneypotField";
+import { OrangeSelect } from "./OrangeSelect";
 
 interface QuoteSectionProps {
   preselectedService: string;
@@ -109,6 +110,25 @@ export const QuoteSection: React.FC<QuoteSectionProps> = ({ preselectedService }
     setErrors(next);
     if (Object.keys(next).length > 0) {
       setShakeCount((c) => c + 1);
+      const fieldIdMap: Partial<Record<keyof QuoteFormState, string>> = {
+        fullName: "quote-full-name",
+        email: "quote-email",
+        phone: "quote-phone",
+        serviceType: "quote-service-type",
+        pickupLocation: "quote-pickup",
+        deliveryLocation: "quote-delivery",
+        packageDescription: "quote-package",
+        estimatedWeightKg: "quote-weight",
+        preferredPickupDate: "quote-date",
+      };
+      const firstErrorKey = Object.keys(next)[0] as keyof QuoteFormState;
+      const firstEl = fieldIdMap[firstErrorKey]
+        ? document.getElementById(fieldIdMap[firstErrorKey]!)
+        : null;
+      if (firstEl) {
+        firstEl.scrollIntoView({ behavior: "smooth", block: "center" });
+        firstEl.focus({ preventScroll: true });
+      }
       return false;
     }
     return true;
@@ -341,19 +361,18 @@ export const QuoteSection: React.FC<QuoteSectionProps> = ({ preselectedService }
                     <label htmlFor="quote-service-type" className="block text-xs font-semibold text-slate-700 mb-1.5">
                       Service Type <span className="text-orange-600">*</span>
                     </label>
-                    <select
+                    <OrangeSelect
                       id="quote-service-type"
-                      required
                       value={form.serviceType}
-                      onChange={(e) => updateField("serviceType", e.target.value)}
-                      className={fieldClass(errors.serviceType)}
-                    >
-                      {SERVICE_TYPE_OPTIONS.map((opt) => (
-                        <option key={opt} value={opt}>
-                          {opt}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(val) => updateField("serviceType", val)}
+                      hasError={Boolean(errors.serviceType)}
+                      ariaLabel="Service Type"
+                      buttonClassName="text-slate-900"
+                      options={SERVICE_TYPE_OPTIONS.map((opt) => ({
+                        value: opt,
+                        label: opt,
+                      }))}
+                    />
                     {errors.serviceType && <p className="mt-1 text-xs text-red-600">{errors.serviceType}</p>}
                   </div>
 

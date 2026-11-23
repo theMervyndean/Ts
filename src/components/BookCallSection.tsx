@@ -71,6 +71,19 @@ export const BookCallSection: React.FC = () => {
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) {
       setShakeCount((c) => c + 1);
+      const fieldIdMap: Record<keyof typeof errors, string> = {
+        date: "call-date",
+        time: "call-time",
+        name: "call-name",
+        email: "call-email",
+        phone: "call-phone",
+      };
+      const firstErrorKey = Object.keys(nextErrors)[0] as keyof typeof errors;
+      const firstEl = document.getElementById(fieldIdMap[firstErrorKey]);
+      if (firstEl) {
+        firstEl.scrollIntoView({ behavior: "smooth", block: "center" });
+        firstEl.focus({ preventScroll: true });
+      }
       return;
     }
 

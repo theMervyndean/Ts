@@ -19,10 +19,14 @@ export const HoneypotField: React.FC<HoneypotFieldProps> = ({ id, value, onChang
       <label htmlFor={id}>Leave this field blank</label>
       <input
         id={id}
-        name="company_website_fax"
+        name="ts_hp_verify"
         type="text"
         tabIndex={-1}
-        autoComplete="off"
+        autoComplete="new-password"
+        data-lpignore="true"
+        data-1p-ignore="true"
+        data-bwignore="true"
+        data-form-type="other"
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />
