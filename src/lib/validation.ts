@@ -1,5 +1,5 @@
 /**
- * Validation and input masking utilities for TS Logistics Nigeria.
+ * Global validation and input masking utilities for TS Logistics.
  */
 
 export function isValidEmail(email: string): boolean {
@@ -8,31 +8,35 @@ export function isValidEmail(email: string): boolean {
 }
 
 /**
- * Validates Nigerian phone numbers in standard local or international formats:
- * - Local: 08031234567, 0812 345 6789, 0701-234-5678, 09051234567, 09121234567
- * - International: +2348031234567, +234 803 123 4567, 2348031234567
+ * Validates both Nigerian and international phone numbers:
+ * - Nigerian local: 0803 123 4567, 070..., 081..., 090..., 091...
+ * - International E.164: +20 10 1234 5678, +44 7700 900077, +1 415 555 0192, +234 803 123 4567
+ * - Other local mobile numbers: 8 to 15 digits
  */
-export function isValidNigerianPhone(phone: string): boolean {
+export function isValidPhone(phone: string): boolean {
   const compact = phone.replace(/[\s\-().]/g, "");
   if (/^0(70|80|81|90|91)\d{8}$/.test(compact)) {
     return true;
   }
-  if (/^\+?234(70|80|81|90|91)\d{8}$/.test(compact)) {
+  if (/^\+[1-9]\d{7,14}$/.test(compact)) {
     return true;
   }
-  // Also accept 2340... accidentally typed after +234
-  if (/^\+?2340(70|80|81|90|91)\d{8}$/.test(compact)) {
+  if (/^\d{8,15}$/.test(compact)) {
     return true;
   }
   return false;
 }
 
+// Preserved export name for backwards compatibility
+export const isValidNigerianPhone = isValidPhone;
+
 /**
- * Input mask for Nigerian phone numbers:
- * Strips non-digit characters (preserving a leading '+') and formats cleanly
- * as "0803 123 4567" or "+234 803 123 4567".
+ * Input mask for Nigerian and international phone numbers:
+ * - Formats "+..." international numbers cleanly while allowing any country code (up to 15 digits)
+ * - Formats Nigerian local "070/080/081/090/091" numbers as "0803 123 4567"
+ * - Allows other local numbers cleanly up to 15 digits
  */
-export function maskNigerianPhone(raw: string): string {
+export function maskPhoneNumber(raw: string): string {
   const trimmed = raw.trimStart();
   const hasPlus = trimmed.startsWith("+");
   const digits = trimmed.replace(/\D/g, "");
@@ -41,22 +45,39 @@ export function maskNigerianPhone(raw: string): string {
     return hasPlus ? "+" : "";
   }
 
-  if (hasPlus || digits.startsWith("234")) {
-    const capped = digits.slice(0, 13);
-    const prefix = capped.slice(0, 3);
-    const rest = capped.slice(3);
-    const parts = [prefix];
-    if (rest.length > 0) parts.push(rest.slice(0, 3));
-    if (rest.length > 3) parts.push(rest.slice(3, 6));
-    if (rest.length > 6) parts.push(rest.slice(6, 10));
-    return `+${parts.join(" ")}`;
+  if (hasPlus) {
+    const capped = digits.slice(0, 15);
+    // Format Nigerian +234 cleanly as +234 803 123 4567
+    if (capped.startsWith("234")) {
+      const prefix = capped.slice(0, 3);
+      const rest = capped.slice(3);
+      const parts = [prefix];
+      if (rest.length > 0) parts.push(rest.slice(0, 3));
+      if (rest.length > 3) parts.push(rest.slice(3, 6));
+      if (rest.length > 6) parts.push(rest.slice(6, 10));
+      return `+${parts.join(" ")}`;
+    }
+    // Generic readable international grouping: +CC XXX XXX XXXX
+    const groups = capped.match(/.{1,3}/g) || [capped];
+    if (groups.length > 1 && groups[0].length === 3 && capped.length <= 12) {
+      return `+${capped.slice(0, 2)} ${capped.slice(2).replace(/(\d{3})(?=\d)/g, "$1 ")}`.trim();
+    }
+    return `+${groups.join(" ")}`;
   }
 
-  const capped = digits.slice(0, 11);
-  if (capped.length <= 4) return capped;
-  if (capped.length <= 7) return `${capped.slice(0, 4)} ${capped.slice(4)}`;
-  return `${capped.slice(0, 4)} ${capped.slice(4, 7)} ${capped.slice(7, 11)}`;
+  if (/^0(70|80|81|90|91)/.test(digits)) {
+    const capped = digits.slice(0, 11);
+    if (capped.length <= 4) return capped;
+    if (capped.length <= 7) return `${capped.slice(0, 4)} ${capped.slice(4)}`;
+    return `${capped.slice(0, 4)} ${capped.slice(4, 7)} ${capped.slice(7, 11)}`;
+  }
+
+  const capped = digits.slice(0, 15);
+  return capped.replace(/(\d{4})(?=\d)/g, "$1 ").trim();
 }
+
+// Preserved export name for backwards compatibility
+export const maskNigerianPhone = maskPhoneNumber;
 
 /**
  * Input mask for shipment tracking IDs:

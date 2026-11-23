@@ -176,6 +176,8 @@ export interface PricingTier {
   id: string;
   name: "Starter" | "Business" | "Enterprise";
   priceNaira: string;
+  priceNgn: number;
+  insuranceCoverNgn?: number;
   cadence: string;
   summary: string;
   features: string[];
@@ -187,12 +189,14 @@ export const PRICING_TIERS: PricingTier[] = [
     id: "starter",
     name: "Starter",
     priceNaira: "₦25,000",
+    priceNgn: 25000,
+    insuranceCoverNgn: 250000,
     cadence: "per month",
     summary: "For growing online stores and SMEs shipping regularly within city hubs.",
     features: [
       "Up to 15 same-day intra-city deliveries monthly",
       "Automated WhatsApp & SMS shipment alerts",
-      "Standard goods-in-transit cover up to ₦250,000",
+      "Standard goods-in-transit cover",
       "48-hour Pay-on-Delivery settlement",
     ],
   },
@@ -200,6 +204,8 @@ export const PRICING_TIERS: PricingTier[] = [
     id: "business",
     name: "Business",
     priceNaira: "₦120,000",
+    priceNgn: 120000,
+    insuranceCoverNgn: 2500000,
     cadence: "per month",
     summary: "Built for multi-city retailers, wholesalers, and high-volume brands.",
     recommended: true,
@@ -207,13 +213,14 @@ export const PRICING_TIERS: PricingTier[] = [
       "Up to 80 deliveries + 12% off interstate haulage",
       "Dedicated dispatch coordinator & priority pickup",
       "Next-day COD bank remittance with zero holding fee",
-      "Goods-in-transit cover up to ₦2,500,000",
+      "Enhanced goods-in-transit cover",
     ],
   },
   {
     id: "enterprise",
     name: "Enterprise",
     priceNaira: "₦450,000",
+    priceNgn: 450000,
     cadence: "per month",
     summary: "Dedicated fleet capacity, warehouse storage, and port customs desk.",
     features: [

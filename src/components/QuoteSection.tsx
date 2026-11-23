@@ -84,7 +84,7 @@ export const QuoteSection: React.FC<QuoteSectionProps> = ({ preselectedService }
       next.email = "Enter a valid email address (e.g. name@company.ng).";
     }
     if (!isValidNigerianPhone(form.phone)) {
-      next.phone = "Enter a valid Nigerian phone number (e.g. 0803 123 4567 or +234 803 123 4567).";
+      next.phone = "Enter a valid phone number (e.g. 0803 123 4567, +234 803 123 4567, or +20 10 1234 5678).";
     }
     if (!form.serviceType) {
       next.serviceType = "Select a logistics service.";
@@ -314,7 +314,7 @@ export const QuoteSection: React.FC<QuoteSectionProps> = ({ preselectedService }
                       required
                       value={form.phone}
                       onChange={(e) => updateField("phone", maskNigerianPhone(e.target.value))}
-                      placeholder="0803 123 4567 or +234 803 123 4567"
+                      placeholder="+234 803 123 4567 or +20 10 1234 5678"
                       className={`${fieldClass(errors.phone)} font-mono`}
                     />
                     {errors.phone && <p className="mt-1 text-xs text-red-600">{errors.phone}</p>}

@@ -1,12 +1,18 @@
 import React, { useEffect, useState } from "react";
-import { AlertCircle, Check, CheckCircle2, Loader2, X } from "lucide-react";
+import { AlertCircle, Check, CheckCircle2, Globe, Loader2, X } from "lucide-react";
 import { PRICING_TIERS, type PricingTier } from "../data/logisticsData";
 import { BUTTON_PRIMARY_CLASSES, Reveal, useRippleFeedback } from "../lib/animations";
+import {
+  formatConvertedFromNaira,
+  SUPPORTED_CURRENCIES,
+  useAutoCurrency,
+} from "../lib/currency";
 import { isValidEmail } from "../lib/validation";
 import { sendToWebhook } from "../lib/webhook";
 import { HoneypotField } from "./HoneypotField";
 
 export const PricingSection: React.FC = () => {
+  const { currency, setCurrency, detectedCurrency, rates, isLiveRate } = useAutoCurrency();
   const [selectedPlan, setSelectedPlan] = useState<PricingTier["name"] | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -84,17 +90,49 @@ export const PricingSection: React.FC = () => {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <Reveal>
-          <div className="max-w-2xl mb-10 sm:mb-12">
-            <p className="text-sm font-semibold text-orange-600 mb-2">Transparent Naira Plans</p>
-            <h2
-              className="font-bold tracking-tight text-navy-900 text-balance leading-tight"
-              style={{ fontSize: "clamp(1.75rem, 3vw, 2.35rem)" }}
-            >
-              Predictable monthly logistics retainers built to scale
-            </h2>
-            <p className="mt-3 text-base text-slate-600 leading-relaxed">
-              Lock in priority rider allocation, discounted interstate haulage, and faster Cash-on-Delivery bank settlements.
-            </p>
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10 sm:mb-12">
+            <div className="max-w-2xl">
+              <p className="text-sm font-semibold text-orange-600 mb-2">Transparent Global Pricing</p>
+              <h2
+                className="font-bold tracking-tight text-navy-900 text-balance leading-tight"
+                style={{ fontSize: "clamp(1.75rem, 3vw, 2.35rem)" }}
+              >
+                Predictable monthly logistics retainers built to scale
+              </h2>
+              <p className="mt-3 text-base text-slate-600 leading-relaxed">
+                Lock in priority rider allocation, discounted interstate haulage, and faster Cash-on-Delivery bank settlements.
+              </p>
+            </div>
+
+            <div className="shrink-0 space-y-1.5">
+              <label
+                htmlFor="currency-selector"
+                className="flex items-center gap-1.5 text-xs font-semibold text-slate-600"
+              >
+                <Globe className="w-3.5 h-3.5 text-orange-600" />
+                <span>
+                  Display Currency
+                  {currency === detectedCurrency ? " (Auto-detected)" : ""}
+                </span>
+              </label>
+              <select
+                id="currency-selector"
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+                className="h-11 min-h-[44px] px-3.5 bg-white border border-slate-300 rounded-lg text-sm font-medium text-navy-900 transition-[border-color,box-shadow] duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500"
+              >
+                {SUPPORTED_CURRENCIES.map((opt) => (
+                  <option key={opt.code} value={opt.code}>
+                    {opt.code} — {opt.label}
+                  </option>
+                ))}
+              </select>
+              {currency !== "NGN" && (
+                <p className="text-[11px] text-slate-500">
+                  {isLiveRate ? "Live exchange estimate" : "Estimated conversion"} · Base tariff in NGN
+                </p>
+              )}
+            </div>
           </div>
         </Reveal>
 
@@ -134,9 +172,10 @@ export const PricingSection: React.FC = () => {
                       {tier.summary}
                     </p>
 
-                    <div className="pb-6 mb-6 border-b border-current/10 flex items-baseline gap-2">
+                  <div className="pb-6 mb-6 border-b border-current/10">
+                    <div className="flex items-baseline gap-2">
                       <span className="text-3xl sm:text-4xl font-bold font-mono tabular-nums tracking-tight">
-                        {tier.priceNaira}
+                        {formatConvertedFromNaira(tier.priceNgn, currency, rates)}
                       </span>
                       <span
                         className={`text-sm ${
@@ -146,9 +185,25 @@ export const PricingSection: React.FC = () => {
                         {tier.cadence}
                       </span>
                     </div>
+                    {currency !== "NGN" && (
+                      <p
+                        className={`mt-1 text-xs font-mono tabular-nums ${
+                          isHighlighted ? "text-slate-400" : "text-slate-500"
+                        }`}
+                      >
+                        ≈ {tier.priceNaira} NGN
+                      </p>
+                    )}
+                  </div>
 
-                    <ul className="space-y-3 mb-8">
-                      {tier.features.map((feature) => (
+                  <ul className="space-y-3 mb-8">
+                    {tier.features.map((feature) => {
+                      const displayFeature =
+                        tier.insuranceCoverNgn && feature.toLowerCase().includes("goods-in-transit cover")
+                          ? `${feature} up to ${formatConvertedFromNaira(tier.insuranceCoverNgn, currency, rates)}`
+                          : feature;
+
+                      return (
                         <li key={feature} className="flex items-start gap-2.5 text-sm">
                           <Check
                             className={`w-4 h-4 shrink-0 mt-0.5 ${
@@ -156,11 +211,12 @@ export const PricingSection: React.FC = () => {
                             }`}
                           />
                           <span className={isHighlighted ? "text-slate-200" : "text-slate-700"}>
-                            {feature}
+                            {displayFeature}
                           </span>
                         </li>
-                      ))}
-                    </ul>
+                      );
+                    })}
+                  </ul>
                   </div>
 
                   <button
@@ -260,7 +316,7 @@ export const PricingSection: React.FC = () => {
                   >
                     {PRICING_TIERS.map((tier) => (
                       <option key={tier.id} value={tier.name}>
-                        {tier.name} ({tier.priceNaira} / month)
+                        {tier.name} ({formatConvertedFromNaira(tier.priceNgn, currency, rates)} / month)
                       </option>
                     ))}
                   </select>

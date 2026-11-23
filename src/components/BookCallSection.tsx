@@ -12,6 +12,24 @@ import { HoneypotField } from "./HoneypotField";
 
 const WAT_QUICK_SLOTS = ["09:00", "11:00", "13:30", "15:00", "16:30"] as const;
 
+function formatWATSlotInLocalTime(dateStr: string, timeStr: string): string | null {
+  if (!dateStr || !timeStr) return null;
+  try {
+    const dt = new Date(`${dateStr}T${timeStr}:00+01:00`);
+    if (Number.isNaN(dt.getTime())) return null;
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (!tz || tz === "Africa/Lagos") return null;
+    const formatted = new Intl.DateTimeFormat(undefined, {
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZoneName: "short",
+    }).format(dt);
+    return `${formatted} (${tz})`;
+  } catch {
+    return null;
+  }
+}
+
 export const BookCallSection: React.FC = () => {
   const minDate = getTodayWATDateString();
 
@@ -47,7 +65,7 @@ export const BookCallSection: React.FC = () => {
     if (name.trim().length < 2) nextErrors.name = "Enter your full name.";
     if (!isValidEmail(email)) nextErrors.email = "Enter a valid email address.";
     if (!isValidNigerianPhone(phone)) {
-      nextErrors.phone = "Enter a valid Nigerian phone number (e.g. 0803 123 4567).";
+      nextErrors.phone = "Enter a valid phone number with country code or local digits (e.g. +234 803 123 4567 or +20 10 1234 5678).";
     }
 
     setErrors(nextErrors);
@@ -195,23 +213,34 @@ export const BookCallSection: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Quick WAT slot presets */}
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs text-slate-500">Quick WAT slots:</span>
-                  {WAT_QUICK_SLOTS.map((slot) => (
-                    <button
-                      key={slot}
-                      type="button"
-                      onClick={() => setTime(slot)}
-                      className={`min-h-[44px] sm:min-h-[34px] px-2.5 py-1 rounded-md text-xs font-mono tabular-nums border transition-[background-color,border-color,color,transform] duration-200 active:scale-95 ${
-                        time === slot
-                          ? "bg-navy-900 text-white border-navy-900"
-                          : "bg-slate-50 text-slate-700 border-slate-200 hover:border-orange-500"
-                      }`}
-                    >
-                      {slot} WAT
-                    </button>
-                  ))}
+                {/* Quick WAT slot presets + Local Time Preview */}
+                <div className="space-y-1.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs text-slate-500">Quick WAT slots:</span>
+                    {WAT_QUICK_SLOTS.map((slot) => (
+                      <button
+                        key={slot}
+                        type="button"
+                        onClick={() => setTime(slot)}
+                        className={`min-h-[44px] sm:min-h-[34px] px-2.5 py-1 rounded-md text-xs font-mono tabular-nums border transition-[background-color,border-color,color,transform] duration-200 active:scale-95 ${
+                          time === slot
+                            ? "bg-navy-900 text-white border-navy-900"
+                            : "bg-slate-50 text-slate-700 border-slate-200 hover:border-orange-500"
+                        }`}
+                      >
+                        {slot} WAT
+                      </button>
+                    ))}
+                  </div>
+                  {(() => {
+                    const localPreview = formatWATSlotInLocalTime(date, time);
+                    return localPreview ? (
+                      <p className="text-xs text-slate-600">
+                        Your local time:{" "}
+                        <span className="font-mono font-semibold text-navy-900">{localPreview}</span>
+                      </p>
+                    ) : null;
+                  })()}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -271,7 +300,7 @@ export const BookCallSection: React.FC = () => {
                         setPhone(maskNigerianPhone(e.target.value));
                         if (errors.phone) setErrors((p) => ({ ...p, phone: undefined }));
                       }}
-                      placeholder="0803 123 4567"
+                      placeholder="+234 803 123 4567 or +20 10 1234 5678"
                       className={`w-full h-11 min-h-[44px] px-3.5 bg-white border rounded-lg text-sm font-mono text-slate-900 transition-[border-color,box-shadow] duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 ${
                         errors.phone ? "border-red-400" : "border-slate-300"
                       }`}
