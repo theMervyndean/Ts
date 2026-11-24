@@ -7,14 +7,16 @@ import {
 import { BUTTON_PRIMARY_CLASSES, Reveal, useRippleFeedback } from "../lib/animations";
 import {
   getTodayWATDateString,
-  isValidEmail,
-  isValidNigerianPhone,
-  maskNigerianPhone,
   maskWeightKg,
+  validateEmail,
+  validatePhone,
+  type CountryCode,
 } from "../lib/validation";
 import { sendToWebhook } from "../lib/webhook";
+import { EmailInput } from "./EmailInput";
 import { HoneypotField } from "./HoneypotField";
 import { OrangeSelect } from "./OrangeSelect";
+import { PhoneInput } from "./PhoneInput";
 
 interface QuoteSectionProps {
   preselectedService: string;
@@ -53,8 +55,11 @@ export const QuoteSection: React.FC<QuoteSectionProps> = ({ preselectedService }
     additionalNotes: "",
   });
 
+  const [phoneCountry, setPhoneCountry] = useState<CountryCode>("NG");
   const [honeypot, setHoneypot] = useState("");
   const [errors, setErrors] = useState<QuoteErrors>({});
+  const [submittedAttempt, setSubmittedAttempt] = useState(false);
+  const [resetKey, setResetKey] = useState(0);
   const [shakeCount, setShakeCount] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -75,17 +80,19 @@ export const QuoteSection: React.FC<QuoteSectionProps> = ({ preselectedService }
     if (submitError) setSubmitError(null);
   };
 
-  const validate = (): boolean => {
+  const validate = (): { ok: boolean; phoneResult: ReturnType<typeof validatePhone> } => {
     const next: QuoteErrors = {};
+    const emailResult = validateEmail(form.email);
+    const phoneResult = validatePhone(form.phone, phoneCountry);
 
     if (form.fullName.trim().length < 2) {
       next.fullName = "Enter your full name.";
     }
-    if (!isValidEmail(form.email)) {
-      next.email = "Enter a valid email address (e.g. name@company.ng).";
+    if (!emailResult.valid) {
+      next.email = emailResult.reason;
     }
-    if (!isValidNigerianPhone(form.phone)) {
-      next.phone = "Enter a valid phone number (e.g. 0803 123 4567, +234 803 123 4567, or +20 10 1234 5678).";
+    if (!phoneResult.valid) {
+      next.phone = phoneResult.reason;
     }
     if (!form.serviceType) {
       next.serviceType = "Select a logistics service.";
@@ -129,9 +136,9 @@ export const QuoteSection: React.FC<QuoteSectionProps> = ({ preselectedService }
         firstEl.scrollIntoView({ behavior: "smooth", block: "center" });
         firstEl.focus({ preventScroll: true });
       }
-      return false;
+      return { ok: false, phoneResult };
     }
-    return true;
+    return { ok: true, phoneResult };
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -139,7 +146,9 @@ export const QuoteSection: React.FC<QuoteSectionProps> = ({ preselectedService }
     if (honeypot.trim() !== "") {
       return;
     }
-    if (!validate()) return;
+    setSubmittedAttempt(true);
+    const { ok, phoneResult } = validate();
+    if (!ok) return;
 
     setSubmitting(true);
     setSubmitError(null);
@@ -149,7 +158,9 @@ export const QuoteSection: React.FC<QuoteSectionProps> = ({ preselectedService }
       const response = await sendToWebhook("quote_request", {
         fullName: form.fullName.trim(),
         email: form.email.trim(),
-        phone: form.phone.trim(),
+        phone: form.phone,
+        phoneE164: phoneResult.e164,
+        phoneCountry: phoneResult.country || phoneCountry,
         companyName: form.companyName.trim(),
         serviceType: form.serviceType,
         pickupLocation: form.pickupLocation.trim(),
@@ -161,6 +172,10 @@ export const QuoteSection: React.FC<QuoteSectionProps> = ({ preselectedService }
       });
 
       setSuccessRef(response.referenceId);
+      setSubmittedAttempt(false);
+      setErrors({});
+      setResetKey((k) => k + 1);
+      setPhoneCountry("NG");
       setForm({
         fullName: "",
         email: "",
@@ -307,37 +322,38 @@ export const QuoteSection: React.FC<QuoteSectionProps> = ({ preselectedService }
                     {errors.fullName && <p className="mt-1 text-xs text-red-600">{errors.fullName}</p>}
                   </div>
 
-                  <div key={errors.email ? `em-${shakeCount}` : "em"} className={errors.email ? "animate-shake" : ""}>
-                    <label htmlFor="quote-email" className="block text-xs font-semibold text-slate-700 mb-1.5">
-                      Email Address <span className="text-orange-600">*</span>
-                    </label>
-                    <input
-                      id="quote-email"
-                      type="email"
-                      required
-                      value={form.email}
-                      onChange={(e) => updateField("email", e.target.value)}
-                      placeholder="chinedu@company.ng"
-                      className={fieldClass(errors.email)}
-                    />
-                    {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
-                  </div>
+                  <EmailInput
+                    id="quote-email"
+                    label={
+                      <>
+                        Email Address <span className="text-orange-600">*</span>
+                      </>
+                    }
+                    value={form.email}
+                    onChange={(val) => updateField("email", val)}
+                    placeholder="chinedu@company.ng"
+                    forceShowError={submittedAttempt}
+                    shakeKey={shakeCount}
+                    resetKey={resetKey}
+                  />
 
-                  <div key={errors.phone ? `ph-${shakeCount}` : "ph"} className={errors.phone ? "animate-shake" : ""}>
-                    <label htmlFor="quote-phone" className="block text-xs font-semibold text-slate-700 mb-1.5">
-                      Phone / WhatsApp <span className="text-orange-600">*</span>
-                    </label>
-                    <input
+                  <div className="md:col-span-2">
+                    <PhoneInput
                       id="quote-phone"
-                      type="tel"
-                      inputMode="tel"
-                      required
+                      label={
+                        <>
+                          Phone / WhatsApp <span className="text-orange-600">*</span>
+                        </>
+                      }
                       value={form.phone}
-                      onChange={(e) => updateField("phone", maskNigerianPhone(e.target.value))}
-                      placeholder="+234 803 123 4567 or +20 10 1234 5678"
-                      className={`${fieldClass(errors.phone)} font-mono`}
+                      country={phoneCountry}
+                      onChange={(val) => updateField("phone", val)}
+                      onCountryChange={setPhoneCountry}
+                      placeholder="0803 123 4567 or +44 7700 900123"
+                      forceShowError={submittedAttempt}
+                      shakeKey={shakeCount}
+                      resetKey={resetKey}
                     />
-                    {errors.phone && <p className="mt-1 text-xs text-red-600">{errors.phone}</p>}
                   </div>
 
                   <div>
@@ -356,7 +372,7 @@ export const QuoteSection: React.FC<QuoteSectionProps> = ({ preselectedService }
 
                   <div
                     key={errors.serviceType ? `st-${shakeCount}` : "st"}
-                    className={`md:col-span-2 ${errors.serviceType ? "animate-shake" : ""}`}
+                    className={errors.serviceType ? "animate-shake" : ""}
                   >
                     <label htmlFor="quote-service-type" className="block text-xs font-semibold text-slate-700 mb-1.5">
                       Service Type <span className="text-orange-600">*</span>

@@ -6,7 +6,9 @@ import {
   SUPPORT_EMAIL,
 } from "../data/logisticsData";
 import { BUTTON_PRIMARY_CLASSES, Reveal, useRippleFeedback } from "../lib/animations";
+import { validateEmail } from "../lib/validation";
 import { isWebhookConfigured, sendToWebhook } from "../lib/webhook";
+import { EmailInput } from "./EmailInput";
 import { HoneypotField } from "./HoneypotField";
 
 interface ChatMessage {
@@ -34,8 +36,10 @@ function getFriendlyFallbackReply(question: string): string {
 export const FaqAndContactSection: React.FC = () => {
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
+  const [email, setEmail] = useState("");
   const [chatInput, setChatInput] = useState("");
   const [honeypot, setHoneypot] = useState("");
+  const [submittedAttempt, setSubmittedAttempt] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
   const [shakeCount, setShakeCount] = useState(0);
   const [sending, setSending] = useState(false);
@@ -53,10 +57,24 @@ export const FaqAndContactSection: React.FC = () => {
     e.preventDefault();
     if (honeypot.trim() !== "") return;
 
+    setSubmittedAttempt(true);
+    const emailResult = validateEmail(email);
     const trimmed = chatInput.trim();
-    if (trimmed.length < 2) {
-      setChatError("Please enter a short question before sending.");
+    const messageInvalid = trimmed.length < 2;
+
+    if (!emailResult.valid || messageInvalid) {
+      if (messageInvalid) {
+        setChatError("Please enter a short question before sending.");
+      } else {
+        setChatError(null);
+      }
       setShakeCount((c) => c + 1);
+      const firstInvalidId = !emailResult.valid ? "support-email" : "support-chat-input";
+      const firstEl = document.getElementById(firstInvalidId);
+      if (firstEl) {
+        firstEl.scrollIntoView({ behavior: "smooth", block: "center" });
+        firstEl.focus({ preventScroll: true });
+      }
       return;
     }
 
@@ -77,6 +95,7 @@ export const FaqAndContactSection: React.FC = () => {
     try {
       const response = await sendToWebhook("support_message", {
         message: trimmed,
+        email: email.trim(),
       });
 
       const serverReply =
@@ -269,8 +288,22 @@ export const FaqAndContactSection: React.FC = () => {
                   ))}
                 </div>
 
-                <form onSubmit={handleSendMessage} noValidate className="p-4 bg-slate-50 space-y-2">
+                <form onSubmit={handleSendMessage} noValidate className="p-4 bg-slate-50 space-y-3">
                   <HoneypotField id="support-hp" value={honeypot} onChange={setHoneypot} />
+
+                  <EmailInput
+                    id="support-email"
+                    label={
+                      <>
+                        Your Email <span className="text-orange-600">*</span>
+                      </>
+                    }
+                    value={email}
+                    onChange={setEmail}
+                    placeholder="you@company.com"
+                    forceShowError={submittedAttempt}
+                    shakeKey={shakeCount}
+                  />
 
                   <div
                     key={chatError ? `chat-${shakeCount}` : "chat"}
@@ -288,7 +321,7 @@ export const FaqAndContactSection: React.FC = () => {
                         if (chatError) setChatError(null);
                       }}
                       placeholder="Ask about Lagos delivery rates, Abuja transit, or clearing..."
-                      className={`flex-1 h-11 min-h-[44px] px-3.5 bg-white border rounded-lg text-sm text-slate-900 placeholder:text-slate-400 transition-[border-color,box-shadow] duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 ${
+                      className={`flex-1 min-w-0 h-11 min-h-[44px] px-3.5 bg-white border rounded-lg text-sm text-slate-900 placeholder:text-slate-400 transition-[border-color,box-shadow] duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 ${
                         chatError ? "border-red-400" : "border-slate-300"
                       }`}
                     />

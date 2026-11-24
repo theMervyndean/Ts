@@ -7,8 +7,9 @@ import {
   SUPPORTED_CURRENCIES,
   useAutoCurrency,
 } from "../lib/currency";
-import { isValidEmail } from "../lib/validation";
+import { validateEmail } from "../lib/validation";
 import { sendToWebhook } from "../lib/webhook";
+import { EmailInput } from "./EmailInput";
 import { HoneypotField } from "./HoneypotField";
 import { OrangeSelect } from "./OrangeSelect";
 
@@ -20,6 +21,8 @@ export const PricingSection: React.FC = () => {
   const [company, setCompany] = useState("");
   const [honeypot, setHoneypot] = useState("");
   const [errors, setErrors] = useState<{ name?: string; email?: string; company?: string }>({});
+  const [submittedAttempt, setSubmittedAttempt] = useState(false);
+  const [resetKey, setResetKey] = useState(0);
   const [shakeCount, setShakeCount] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -39,6 +42,8 @@ export const PricingSection: React.FC = () => {
   const openModalForPlan = (planName: PricingTier["name"]) => {
     setSelectedPlan(planName);
     setErrors({});
+    setSubmittedAttempt(false);
+    setResetKey((k) => k + 1);
     setSubmitError(null);
     setSuccessRef(null);
   };
@@ -48,14 +53,27 @@ export const PricingSection: React.FC = () => {
     if (!selectedPlan) return;
     if (honeypot.trim() !== "") return;
 
+    setSubmittedAttempt(true);
+    const emailResult = validateEmail(email);
+
     const nextErrors: { name?: string; email?: string; company?: string } = {};
     if (name.trim().length < 2) nextErrors.name = "Enter your full name.";
-    if (!isValidEmail(email)) nextErrors.email = "Enter a valid email address.";
+    if (!emailResult.valid) nextErrors.email = emailResult.reason;
     if (company.trim().length < 2) nextErrors.company = "Enter your business or store name.";
 
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) {
       setShakeCount((c) => c + 1);
+      const fieldIdMap: Record<keyof typeof errors, string> = {
+        name: "plan-name",
+        email: "plan-email",
+        company: "plan-company",
+      };
+      const firstErrorKey = Object.keys(nextErrors)[0] as keyof typeof errors;
+      const firstEl = document.getElementById(fieldIdMap[firstErrorKey]);
+      if (firstEl) {
+        firstEl.focus();
+      }
       return;
     }
 
@@ -70,6 +88,8 @@ export const PricingSection: React.FC = () => {
         plan: selectedPlan,
       });
       setSuccessRef(response.referenceId);
+      setSubmittedAttempt(false);
+      setResetKey((k) => k + 1);
       setName("");
       setEmail("");
       setCompany("");
@@ -342,26 +362,23 @@ export const PricingSection: React.FC = () => {
                   {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
                 </div>
 
-                <div key={errors.email ? `pe-${shakeCount}` : "pe"} className={errors.email ? "animate-shake" : ""}>
-                  <label htmlFor="plan-email" className="block text-xs font-semibold text-slate-700 mb-1">
-                    Work Email <span className="text-orange-600">*</span>
-                  </label>
-                  <input
-                    id="plan-email"
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => {
-                      setEmail(e.target.value);
-                      if (errors.email) setErrors((p) => ({ ...p, email: undefined }));
-                    }}
-                    placeholder="amina@zuriatelier.ng"
-                    className={`w-full h-11 min-h-[44px] px-3.5 bg-white border rounded-lg text-sm text-slate-900 transition-[border-color,box-shadow] duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 ${
-                      errors.email ? "border-red-400" : "border-slate-300"
-                    }`}
-                  />
-                  {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
-                </div>
+                <EmailInput
+                  id="plan-email"
+                  label={
+                    <>
+                      Work Email <span className="text-orange-600">*</span>
+                    </>
+                  }
+                  value={email}
+                  onChange={(val) => {
+                    setEmail(val);
+                    if (errors.email) setErrors((p) => ({ ...p, email: undefined }));
+                  }}
+                  placeholder="amina@zuriatelier.ng"
+                  forceShowError={submittedAttempt}
+                  shakeKey={shakeCount}
+                  resetKey={resetKey}
+                />
 
                 <div key={errors.company ? `pc-${shakeCount}` : "pc"} className={errors.company ? "animate-shake" : ""}>
                   <label htmlFor="plan-company" className="block text-xs font-semibold text-slate-700 mb-1">

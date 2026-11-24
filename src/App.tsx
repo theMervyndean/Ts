@@ -14,6 +14,7 @@ import { PricingSection } from "./components/PricingSection";
 import { QuoteSection } from "./components/QuoteSection";
 import { ServicesAndProcess } from "./components/ServicesAndProcess";
 import { TrackShipmentSection } from "./components/TrackShipmentSection";
+import { ValidationTester } from "./components/ValidationTester";
 import { SERVICE_TYPE_OPTIONS } from "./data/logisticsData";
 
 export default function App() {
@@ -30,6 +31,7 @@ export default function App() {
         <PricingSection />
         <BookCallSection />
         <FaqAndContactSection />
+        <ValidationTester />
       </main>
       <Footer />
       <BackToTopButton />

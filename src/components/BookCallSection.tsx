@@ -3,12 +3,14 @@ import { AlertCircle, Calendar, Check, CheckCircle2, Clock, Loader2 } from "luci
 import { BUTTON_PRIMARY_CLASSES, Reveal, useRippleFeedback } from "../lib/animations";
 import {
   getTodayWATDateString,
-  isValidEmail,
-  isValidNigerianPhone,
-  maskNigerianPhone,
+  validateEmail,
+  validatePhone,
+  type CountryCode,
 } from "../lib/validation";
 import { sendToWebhook } from "../lib/webhook";
+import { EmailInput } from "./EmailInput";
 import { HoneypotField } from "./HoneypotField";
+import { PhoneInput } from "./PhoneInput";
 
 const WAT_QUICK_SLOTS = ["09:00", "11:00", "13:30", "15:00", "16:30"] as const;
 
@@ -38,6 +40,7 @@ export const BookCallSection: React.FC = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [phoneCountry, setPhoneCountry] = useState<CountryCode>("NG");
   const [honeypot, setHoneypot] = useState("");
   const [errors, setErrors] = useState<{
     date?: string;
@@ -46,6 +49,8 @@ export const BookCallSection: React.FC = () => {
     email?: string;
     phone?: string;
   }>({});
+  const [submittedAttempt, setSubmittedAttempt] = useState(false);
+  const [resetKey, setResetKey] = useState(0);
   const [shakeCount, setShakeCount] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -59,14 +64,16 @@ export const BookCallSection: React.FC = () => {
     e.preventDefault();
     if (honeypot.trim() !== "") return;
 
+    setSubmittedAttempt(true);
+    const emailResult = validateEmail(email);
+    const phoneResult = validatePhone(phone, phoneCountry);
+
     const nextErrors: typeof errors = {};
     if (!date) nextErrors.date = "Select a preferred date.";
     if (!time) nextErrors.time = "Select a time in WAT (UTC+1).";
     if (name.trim().length < 2) nextErrors.name = "Enter your full name.";
-    if (!isValidEmail(email)) nextErrors.email = "Enter a valid email address.";
-    if (!isValidNigerianPhone(phone)) {
-      nextErrors.phone = "Enter a valid phone number with country code or local digits (e.g. +234 803 123 4567 or +20 10 1234 5678).";
-    }
+    if (!emailResult.valid) nextErrors.email = emailResult.reason;
+    if (!phoneResult.valid) nextErrors.phone = phoneResult.reason;
 
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) {
@@ -99,13 +106,19 @@ export const BookCallSection: React.FC = () => {
         scheduledAtWAT: `${date} ${time} WAT`,
         name: name.trim(),
         email: email.trim(),
-        phone: phone.trim(),
+        phone,
+        phoneE164: phoneResult.e164,
+        phoneCountry: phoneResult.country || phoneCountry,
       });
 
       setConfirmation({
         referenceId: response.referenceId,
         slotLabel: `${date} at ${time} WAT`,
       });
+      setSubmittedAttempt(false);
+      setErrors({});
+      setResetKey((k) => k + 1);
+      setPhoneCountry("NG");
       setName("");
       setEmail("");
       setPhone("");
@@ -256,9 +269,9 @@ export const BookCallSection: React.FC = () => {
                   })()}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div key={errors.name ? `cn-${shakeCount}` : "cn"} className={errors.name ? "animate-shake" : ""}>
-                    <label htmlFor="call-name" className="block text-xs font-semibold text-slate-700 mb-1">
+                    <label htmlFor="call-name" className="block text-xs font-semibold text-slate-700 mb-1.5">
                       Your Name <span className="text-orange-600">*</span>
                     </label>
                     <input
@@ -278,47 +291,44 @@ export const BookCallSection: React.FC = () => {
                     {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
                   </div>
 
-                  <div key={errors.email ? `ce-${shakeCount}` : "ce"} className={errors.email ? "animate-shake" : ""}>
-                    <label htmlFor="call-email" className="block text-xs font-semibold text-slate-700 mb-1">
-                      Email <span className="text-orange-600">*</span>
-                    </label>
-                    <input
-                      id="call-email"
-                      type="email"
-                      required
-                      value={email}
-                      onChange={(e) => {
-                        setEmail(e.target.value);
-                        if (errors.email) setErrors((p) => ({ ...p, email: undefined }));
-                      }}
-                      placeholder="tunde@tradehub.ng"
-                      className={`w-full h-11 min-h-[44px] px-3.5 bg-white border rounded-lg text-sm text-slate-900 transition-[border-color,box-shadow] duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 ${
-                        errors.email ? "border-red-400" : "border-slate-300"
-                      }`}
-                    />
-                    {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
-                  </div>
+                  <EmailInput
+                    id="call-email"
+                    label={
+                      <>
+                        Email <span className="text-orange-600">*</span>
+                      </>
+                    }
+                    value={email}
+                    onChange={(val) => {
+                      setEmail(val);
+                      if (errors.email) setErrors((p) => ({ ...p, email: undefined }));
+                    }}
+                    placeholder="tunde@tradehub.ng"
+                    forceShowError={submittedAttempt}
+                    shakeKey={shakeCount}
+                    resetKey={resetKey}
+                  />
 
-                  <div key={errors.phone ? `cp-${shakeCount}` : "cp"} className={errors.phone ? "animate-shake" : ""}>
-                    <label htmlFor="call-phone" className="block text-xs font-semibold text-slate-700 mb-1">
-                      Phone <span className="text-orange-600">*</span>
-                    </label>
-                    <input
+                  <div className="md:col-span-2">
+                    <PhoneInput
                       id="call-phone"
-                      type="tel"
-                      inputMode="tel"
-                      required
+                      label={
+                        <>
+                          Phone <span className="text-orange-600">*</span>
+                        </>
+                      }
                       value={phone}
-                      onChange={(e) => {
-                        setPhone(maskNigerianPhone(e.target.value));
+                      country={phoneCountry}
+                      onChange={(val) => {
+                        setPhone(val);
                         if (errors.phone) setErrors((p) => ({ ...p, phone: undefined }));
                       }}
-                      placeholder="+234 803 123 4567 or +20 10 1234 5678"
-                      className={`w-full h-11 min-h-[44px] px-3.5 bg-white border rounded-lg text-sm font-mono text-slate-900 transition-[border-color,box-shadow] duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 ${
-                        errors.phone ? "border-red-400" : "border-slate-300"
-                      }`}
+                      onCountryChange={setPhoneCountry}
+                      placeholder="0803 123 4567 or +44 7700 900123"
+                      forceShowError={submittedAttempt}
+                      shakeKey={shakeCount}
+                      resetKey={resetKey}
                     />
-                    {errors.phone && <p className="mt-1 text-xs text-red-600">{errors.phone}</p>}
                   </div>
                 </div>
 
