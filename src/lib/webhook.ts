@@ -1,8 +1,8 @@
 // ============================================================================
 // TS LOGISTICS — CONFIGURABLE AUTOMATION WEBHOOK
 // ============================================================================
-// export const WEBHOOK_URL = "https://hook.us2.make.com/n4xjbwi4or9amfr3l2xeccvfcsvxlly7";
-export const WEBHOOK_URL = "https://hook.eu1.make.com/is6wlj8hx8c69iodjvxl7loa7d2vg1gb"
+export const WEBHOOK_URL = "https://hook.us2.make.com/n4xjbwi4or9amfr3l2xeccvfcsvxlly7";
+// export const WEBHOOK_URL = "https://hook.eu1.make.com/is6wlj8hx8c69iodjvxl7loa7d2vg1gb"
 
 export type FormType =
   | "quote_request"
